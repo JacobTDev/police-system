@@ -9,6 +9,8 @@ CCSO = 3
 
 ]]
 
+local serviceListStatus = {}
+local serviceListBlips = {}
 local currentDepartmentID = nil
 local hasReceivedDepartmentID = false
 local isPolice = false
@@ -37,12 +39,13 @@ AddEventHandler("ps:GetCurrentDepartmentID", function(departmentID)
     hasReceivedDepartmentID = true
 end) 
 
--- draw marker for station
+-- draw markers for stations and check if player is on them
 Citizen.CreateThread(function() 
     while true do 
         Citizen.Wait(0)
         if isPolice then
             DrawServiceMarkers()
+            IsPlayerOnServiceMarker()
         end
     end
 end)
@@ -55,3 +58,96 @@ function DrawServiceMarkers()
         false, true, 2, false, false, false, false)
     end
 end 
+
+function IsPlayerOnServiceMarker() 
+    local pos = GetEntityCoords(PlayerPedId())
+
+    for i, s in ipairs(policeStations) do
+        if #(pos - s) <= 5 then
+            PlayerToggleService()
+        end
+    end
+end
+
+function PlayerToggleService()
+    -- Placeholder integrate with action menu later
+    if not inService then
+        print("press e to go on duty")
+        TriggerServerEvent("ps:InService", PlayerPedId())
+
+    else
+        print("press e to go off duty")
+        TriggerServerEvent("ps:NotInService", PlayerPedId())
+        RemoveServiceBlips()
+    end        
+end 
+
+-- Add blip for all officers on duty
+RegisterNetEvent("ps:GetInitialServiceListStatus")
+AddEventHandler("ps:GetInitialServiceListStatus", function(list) 
+    serviceListStatus = list
+    AddServiceBlips()
+end)
+
+function AddServiceBlips() 
+    for i, p in pairs(serviceListStatus) do
+        if p == 1 then
+            local blip = AddBlipForEntity(tonumber(i))
+            serviceListBlips[i] = blip
+            SetBlipOptions[i]
+        end
+    end
+end
+
+RegisterNetEvent("ps:GetChangeInServiceListStatus")
+AddEventHandler("ps:GetChangeInServiceListStatus", function(_playerPedId, newStatus) 
+    serviceListStatus[_playerPedId] = newStatus
+
+    if not playerPedIdNumber == PlayerPedId() then
+        if newStatus == 0 then
+            RemoveServiceBlip(_playerPedId)
+        else
+            AddServiceBlip(_playerPedId)
+        end
+    end
+end)
+
+function AddServiceBlip(_playerPedId) 
+    if serviceListBlips[_playerPedId] == nil then
+        local blip = AddBlipForEntity(tonumber(_playerPedId))
+        serviceListBlips[_playerPedId] = blip
+        SetBlipOptions(_playerPedId)
+    end
+end 
+
+function SetBlipOptions(blipId)
+    local blip = serviceListBlips[blipId]
+
+    --blip options here
+end
+
+function RemoveServiceBlip(_playerPedId)
+    local blip = serviceListBlips[_playerPedId]
+
+    if blip ~= nil then
+        if DoesBlipExist(blip) then
+            RemoveBlip(blip)
+            blip = nil
+        else
+            blip = nil
+        end
+    end
+end
+
+function RemoveServiceBlips() 
+    for i, blip in pairs(serviceListBlips) do
+        if blip ~= nil then
+            if DoesBlipExist(blip) then
+                RemoveBlip(blip)
+                blip = nil
+            else
+                blip = nil
+            end
+        end
+    end
+end

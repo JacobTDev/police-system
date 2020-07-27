@@ -1,3 +1,5 @@
+local serviceListStatus = {}
+
 RegisterNetEvent("ps:SendCurrentDepartmentID")
 AddEventHandler("ps:SendCurrentDepartmentID", function() 
     --[[Department IDs:
@@ -18,3 +20,19 @@ AddEventHandler("ps:SendCurrentDepartmentID", function()
         TriggerClientEvent("ps:GetCurrentDepartmentID", _source, 0)
     end
 end)
+
+RegisterNetEvent("ps:SendInitialServiceListStatus")
+AddEventHandler("ps:SendInitialServiceListStatus", function() 
+   local _source = source
+   TriggerClientEvent("ps:GetInitialServiceListStatus", _source, serviceListStatus)
+end)
+
+RegisterNetEvent("ps:NotInService")
+AddEventHandler("ps:NotInService", function(playerPedId)
+    local newStatus = 0
+    
+    _playerPedId = tostring(playerPedId)
+    serviceListStatus[_playerPedId] = status
+
+    TriggerClientEvent("ps:GetChangeInServiceListStatus", -1, _playerPedId, newStatus)
+end) 
