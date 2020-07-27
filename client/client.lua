@@ -165,38 +165,44 @@ function RemoveServiceBlips()
     end
 end
 
+function FindClosestPlayer()
+    playersList = {}
+    hasReceivedPlayersList = false
+    TriggerServerEvent("ps:SendPlayersList")
+
+    local playerPos = GetEntityCoords(PlayerPedId())
+
+    while not hasReceivedPlayersList do
+        Citizen.Wait(0)
+    end
+
+    local closestPlayer = nil
+    local minValue = 1000000
+
+    for i, player in ipairs(players) do
+        local playerId = GetPlayerFromServerId(player)
+        
+        if not playerId = PlayerPedId() then
+            local otherPos = GetEntityCoords(playerId)
+            local distance = #(playerPos - otherPos)
+
+            if distance < minValue then
+                minValue = distance
+                closestPlayer = playerId
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
 -- LEO Abilities
 RegisterNUICallback("ps:Grab", function(data, cb) 
     if currentlyGrabbing then
         DetachEntity(grabbedPed, true, true)
         grabbedPed = nil
     else
-        playersList = {}
-        hasReceivedPlayersList = false
-        pedToGrab = nil
-        TriggerServerEvent("ps:SendPlayersList")
-
-        local playerPos = GetEntityCoords(PlayerPedId())
-
-        while not hasReceivedPlayersList do
-            Citizen.Wait(0)
-        end
-
-        local minValue = 1000000
-
-        for i, player in ipairs(players) do
-            local playerId = GetPlayerFromServerId(player)
-            
-            if not playerId = PlayerPedId() then
-                local otherPos = GetEntityCoords(playerId)
-                local distance = #(playerPos - otherPos)
-
-                if distance < minValue then
-                    minValue = distance
-                    pedToGrab = playerId
-                end
-            end
-        end
-
+        local closestPlayer = FindClosestPlayer() 
         -- TODO: Attach entity
 end)
+
