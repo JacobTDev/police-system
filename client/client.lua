@@ -11,12 +11,23 @@ CCSO = 3
 
 local serviceListStatus = {}
 local serviceListBlips = {}
+local playersList = {}
 local currentDepartmentID = nil
 local hasReceivedDepartmentID = false
 local isPolice = false
 local inService = false
+local hasReceivedPlayersList = false
+local currentlyGrabbing = false
+local grabbedPed = nil
+local pedToGrab = nil
 
 local policeStations = { vector3(1857.01, 3689.56, 34.2671) }
+¨
+RegisterNetEvent("ps:GetPlayersList")
+AddEventHandler("ps:GetPlayersList", function(list) 
+    playersList = list
+    hasReceivedPlayersList = true
+end)
 
 -- Get current department
 AddEventHandler("onClientResourceStart", function()
@@ -74,7 +85,6 @@ function PlayerToggleService()
     if not inService then
         print("press e to go on duty")
         TriggerServerEvent("ps:InService", PlayerPedId())
-
     else
         print("press e to go off duty")
         TriggerServerEvent("ps:NotInService", PlayerPedId())
@@ -86,7 +96,10 @@ end
 RegisterNetEvent("ps:GetInitialServiceListStatus")
 AddEventHandler("ps:GetInitialServiceListStatus", function(list) 
     serviceListStatus = list
-    AddServiceBlips()
+
+    if inService then
+        AddServiceBlips()
+    end
 end)
 
 function AddServiceBlips() 
@@ -103,7 +116,7 @@ RegisterNetEvent("ps:GetChangeInServiceListStatus")
 AddEventHandler("ps:GetChangeInServiceListStatus", function(_playerPedId, newStatus) 
     serviceListStatus[_playerPedId] = newStatus
 
-    if not playerPedIdNumber == PlayerPedId() then
+    if not playerPedIdNumber == PlayerPedId() and inService then
         if newStatus == 0 then
             RemoveServiceBlip(_playerPedId)
         else
@@ -151,3 +164,39 @@ function RemoveServiceBlips()
         end
     end
 end
+
+-- LEO Abilities
+RegisterNUICallback("ps:Grab", function(data, cb) 
+    if currentlyGrabbing then
+        DetachEntity(grabbedPed, true, true)
+        grabbedPed = nil
+    else
+        playersList = {}
+        hasReceivedPlayersList = false
+        pedToGrab = nil
+        TriggerServerEvent("ps:SendPlayersList")
+
+        local playerPos = GetEntityCoords(PlayerPedId())
+
+        while not hasReceivedPlayersList do
+            Citizen.Wait(0)
+        end
+
+        local minValue = 1000000
+
+        for i, player in ipairs(players) do
+            local playerId = GetPlayerFromServerId(player)
+            
+            if not playerId = PlayerPedId() then
+                local otherPos = GetEntityCoords(playerId)
+                local distance = #(playerPos - otherPos)
+
+                if distance < minValue then
+                    minValue = distance
+                    pedToGrab = playerId
+                end
+            end
+        end
+
+        -- TODO: Attach entity
+end)
