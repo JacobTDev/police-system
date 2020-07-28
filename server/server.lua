@@ -10,16 +10,26 @@ AddEventHandler("ps:SendCurrentDepartmentID", function()
 
     local _source = source
 
-    if IsPlayerAceAllowed(_source, "group.cfd") then
+    if exports.discord_perms:IsRolePresent(_source, 737687318592225300) then
         TriggerClientEvent("ps:GetCurrentDepartmentID", _source, 1)
-    elseif IsPlayerAceAllowed(_source, "group.cpd") then
+    elseif exports.discord_perms:IsRolePresent(_source, 737687140355539064) then
         TriggerClientEvent("ps:GetCurrentDepartmentID", _source, 2)
-    elseif IsPlayerAceAllowed(_source, "group.ccso") then
+    elseif exports.discord_perms:IsRolePresent(_source, 737687425945567243) then
         TriggerClientEvent("ps:GetCurrentDepartmentID", _source, 3)
     else
         TriggerClientEvent("ps:GetCurrentDepartmentID", _source, 0)
     end
 end)
+
+RegisterNetEvent("ps:InService")
+AddEventHandler("ps:InService", function(playerPedId)
+    local newStatus = 1
+    
+    _playerPedId = tostring(playerPedId)
+    serviceListStatus[_playerPedId] = newStatus
+
+    TriggerClientEvent("ps:GetChangeInServiceListStatus", -1, _playerPedId, newStatus)
+end) 
 
 RegisterNetEvent("ps:SendInitialServiceListStatus")
 AddEventHandler("ps:SendInitialServiceListStatus", function() 
@@ -32,7 +42,10 @@ AddEventHandler("ps:NotInService", function(playerPedId)
     local newStatus = 0
     
     _playerPedId = tostring(playerPedId)
-    serviceListStatus[_playerPedId] = status
+    serviceListStatus[_playerPedId] = newStatus
 
     TriggerClientEvent("ps:GetChangeInServiceListStatus", -1, _playerPedId, newStatus)
 end) 
+
+
+
